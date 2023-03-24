@@ -21,7 +21,11 @@
             <div class="day-number">{{ new Date(day).getDate() }}</div>
 
             <div class="day-events">
-              <div v-for="event in eventsOnDay(day)" :key="event.id" class="event">
+              <div
+                v-for="event in eventsOnDay(day)"
+                :key="event.id"
+                class="event"
+              >
                 <div>{{ event.title }}</div>
                 <div class="event-time">
                   {{ formatTime(event.start) }} - {{ formatTime(event.end) }}
@@ -29,7 +33,7 @@
                 <button @click="editEvent(event)">Edit</button>
               </div>
             </div>
-            <button @click="addNewEvent(day)" >Add Event</button>
+            <button @click="addNewEvent(day)">Add Event</button>
           </td>
         </tr>
       </tbody>
@@ -39,7 +43,18 @@
     <div v-if="showModal" class="modal">
       <button class="modal-close" @click="closeModal">X</button>
       <div class="modal-content">
-        <h2 >Add Event for {{ selectedDay && selectedDay instanceof Date ? selectedDay.toLocaleDateString("en-US", { day: "numeric", month: "numeric", year: "numeric"}) : '' }}</h2>
+        <h2>
+          Add Event for
+          {{
+            selectedDay && selectedDay instanceof Date
+              ? selectedDay.toLocaleDateString("en-US", {
+                  day: "numeric",
+                  month: "numeric",
+                  year: "numeric",
+                })
+              : ""
+          }}
+        </h2>
         <input type="text" v-model="newEventTitle" placeholder="Event Titleh" />
         <div>
           <label for="start-time">Start Time:</label>
@@ -65,14 +80,14 @@ import {
   addMonths,
   setHours,
   format,
-  parseISO
+  parseISO,
 } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 const timezone = "Europe/London";
 export default {
   // eslint-disable-next-line vue/multi-word-component-names
   name: "Calendar",
-  
+
   data() {
     return {
       currentMonth: new Date(),
@@ -84,28 +99,28 @@ export default {
       newEventStart: "",
       newEventEnd: "",
       events: JSON.parse(localStorage.getItem("events")) || [
-      {
-        id: 1,
-        title: "Lunch",
-        start: new Date(2023, 2, 26, 12, 0),
-        end: new Date(2023, 2, 26, 13, 0),
-      },
-    ],
+        {
+          id: 1,
+          title: "Lunch",
+          start: new Date(2023, 2, 26, 12, 0),
+          end: new Date(2023, 2, 26, 13, 0),
+        },
+      ],
       showModal: false,
     };
   },
- mounted() {
-  const events = JSON.parse(localStorage.getItem("events"));
-  if (events) {
-    this.events = events;
-  }
-  setInterval(() => {
-    const londonTime = utcToZonedTime(new Date(), timezone);
-    this.currentTime = format(londonTime, "h:mm:ss a", {
-      timeZone: timezone,
-    });
-  }, 60000);
-},
+  mounted() {
+    const events = JSON.parse(localStorage.getItem("events"));
+    if (events) {
+      this.events = events;
+    }
+    setInterval(() => {
+      const londonTime = utcToZonedTime(new Date(), timezone);
+      this.currentTime = format(londonTime, "h:mm:ss a", {
+        timeZone: timezone,
+      });
+    }, 60000);
+  },
   computed: {
     weeks() {
       const start = startOfWeek(startOfMonth(this.currentMonth));
@@ -126,24 +141,22 @@ export default {
       return format(this.currentMonth, "MMMM yyyy");
     },
     londonTime() {
-    const now = new Date();
-    const londonTime = utcToZonedTime(now, timezone);
-    return format(londonTime, "h:mm a ", { timeZone: timezone });
-  },
-  
+      const now = new Date();
+      const londonTime = utcToZonedTime(now, timezone);
+      return format(londonTime, "h:mm a ", { timeZone: timezone });
+    },
   },
   methods: {
     formatTime(time) {
-
-  const date = new Date(time);
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  return `${hours}:${minutes < 10 ? '0' : ''}${minutes}`;
-},
-findEvent(id) {
-    return this.events.find((event) => event.id === id);
-  },
-addNewEvent(day) {
+      const date = new Date(time);
+      const hours = date.getHours();
+      const minutes = date.getMinutes();
+      return `${hours}:${minutes < 10 ? "0" : ""}${minutes}`;
+    },
+    findEvent(id) {
+      return this.events.find((event) => event.id === id);
+    },
+    addNewEvent(day) {
       this.selectedDay = day;
       this.selectedEvent = null;
       this.newEventTitle = "";
@@ -151,64 +164,73 @@ addNewEvent(day) {
       this.newEventEnd = "";
     },
 
- 
     saveEvent() {
-    const start = setHours(this.selectedDay, parseInt(this.newEventStart));
-    const end = setHours(this.selectedDay, parseInt(this.newEventEnd));
-    if (this.selectedEvent) {
-      this.selectedEvent.title = this.newEventTitle;
-      this.selectedEvent.start = start;
-      this.selectedEvent.end = end;
-    } else {
-      const id = Math.max(...this.events.map((e) => e.id)) + 1;
-      this.events.push({ id, title: this.newEventTitle, start, end });
-    }
-    localStorage.setItem("events", JSON.stringify(this.events));
-    this.showModal = false;
-  },
+      const start = setHours(this.selectedDay, parseInt(this.newEventStart));
+      const end = setHours(this.selectedDay, parseInt(this.newEventEnd));
+      if (this.selectedEvent) {
+        this.selectedEvent.title = this.newEventTitle;
+        this.selectedEvent.start = start;
+        this.selectedEvent.end = end;
+      } else {
+        const id = Math.max(...this.events.map((e) => e.id)) + 1;
+        this.events.push({ id, title: this.newEventTitle, start, end });
+      }
+      localStorage.setItem("events", JSON.stringify(this.events));
+      this.showModal = false;
+    },
 
-  editEvent(event) {
-    this.selectedEvent = event;
-    this.selectedDay = event.start;
-    this.newEventTitle = event.title;
-    this.newEventStart = format(parseISO(event.start), "HH:mm");
-    this.newEventEnd = format(parseISO(event.end), "HH:mm");
-    this.showModal = true;
-  },
+    editEvent(event) {
+      const start = parseISO(event.start);
+      const end = parseISO(event.end);
+      if (isNaN(start) || isNaN(end)) {
+        console.error("Invalid time value");
+        return;
+      }
+      this.selectedEvent = event;
+      this.newEventTitle = event.title;
+      this.newEventStart = format(start, "HH:mm");
+      this.newEventEnd = format(end, "HH:mm");
+      this.showModal = true;
+    },
 
-  deleteEvent(event) {  
-    this.selectedEvent = event;
-  if (this.selectedEvent) {
-  const index = this.events.findIndex(event => event.id === this.selectedEvent.id);
-  this.events.splice(index, 1);
-  localStorage.setItem("events", JSON.stringify(this.events));
-  this.selectedEvent = null;
-}
-this.showModal = false;
+    deleteEvent(event) {
+      this.selectedEvent = event;
+      if (this.selectedEvent) {
+        const index = this.events.findIndex(
+          (event) => event.id === this.selectedEvent.id
+        );
+        this.events.splice(index, 1);
+        localStorage.setItem("events", JSON.stringify(this.events));
+        this.selectedEvent = null;
+      }
+      this.showModal = false;
+    },
 
-},
-
-eventsOnDay(day) {
-    const events = this.events.filter((event) => {
-      const eventDate = new Date(event.start);
-      return eventDate.getFullYear() === day.getFullYear() && eventDate.getMonth() === day.getMonth() && eventDate.getDate() === day.getDate();
-    });
-    return events;
-  },
+    eventsOnDay(day) {
+      const events = this.events.filter((event) => {
+        const eventDate = new Date(event.start);
+        return (
+          eventDate.getFullYear() === day.getFullYear() &&
+          eventDate.getMonth() === day.getMonth() &&
+          eventDate.getDate() === day.getDate()
+        );
+      });
+      return events;
+    },
     formatTimeInput(time) {
-  const date = new Date();
-  const [hours, minutes] = time.split(":");
-  date.setHours(hours);
-  date.setMinutes(minutes);
-  return date;
-},
-showModalWindow() {
-    this.showModal = true;
-  },
+      const date = new Date();
+      const [hours, minutes] = time.split(":");
+      date.setHours(hours);
+      date.setMinutes(minutes);
+      return date;
+    },
+    showModalWindow() {
+      this.showModal = true;
+    },
 
-  closeModal() {
-    this.showModal = false;
-  },
+    closeModal() {
+      this.showModal = false;
+    },
     combineDateTime(date, time) {
       const [hours, minutes] = time.split(":");
       return setHours(date, hours, minutes);
@@ -222,18 +244,17 @@ showModalWindow() {
 
     selectDay(day) {
       this.selectedDay = new Date(day);
-    this.selectedEvent = null;
-    this.showModal = true;
-  },
+      this.selectedEvent = null;
+      this.showModal = true;
+    },
     addEvent(day) {
       this.selectedDay = day;
     },
-  }
-}
+  },
+};
 </script>
 
 <style scoped>
-
 .calendar {
   font-family: Arial, sans-serif;
   min-width: 610px;
@@ -371,18 +392,17 @@ h2 {
   background-color: transparent;
   border: none;
   cursor: pointer;
-  }
-  
-  .modal-close:hover {
+}
+
+.modal-close:hover {
   color: red;
-  }
-  .delete{
-    margin-left: 20px;
-  }
+}
+.delete {
+  margin-left: 20px;
+}
 
 @media (max-width: 768px) {
   .calendar {
-
     padding: 10px;
   }
   .current-month {
@@ -415,5 +435,4 @@ h2 {
     font-size: 20px;
   }
 }
-
 </style>
